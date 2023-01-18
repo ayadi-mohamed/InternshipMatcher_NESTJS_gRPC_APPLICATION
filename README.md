@@ -48,6 +48,10 @@ $ npm i -D @types/node ts-proto
 #### Installing prerequisite and accessing Proto Repository
 $ npm install
 $ npm run proto:install
+
+#### Building Image
+$ docker build -t application-svc .
+
 ```
 
 ## Authors
