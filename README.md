@@ -1,5 +1,5 @@
 # InternshipMatcher_NESTJS_gRPC_APPLICATION
-Offer service for the InternshipMatcher project
+Application service for the InternshipMatcher project
 
 NestJS | Microservices | gRPC | API Gateway | seperate databases
 
