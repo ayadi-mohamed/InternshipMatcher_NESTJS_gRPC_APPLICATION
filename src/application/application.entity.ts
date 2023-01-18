@@ -1,5 +1,7 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { stateEnum } from './proto/application.pb';
+/* eslint-disable prettier/prettier */
+import { BaseEntity, Column, DeleteDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { stateEnum } from './state.enum';
+
 
 @Entity()
 export class Application extends BaseEntity {
@@ -18,7 +20,14 @@ export class Application extends BaseEntity {
 
   @Column({ type: 'integer' })
   public idUser!: number;
-  @Column({ type: 'boolean' })
+
+  @Column({ type: 'enum', 
+    enum:stateEnum,
+    default: stateEnum.PENDING})
   public state!: stateEnum;
+
+
+  @DeleteDateColumn()
+  deletedAt?: Date;
 
 }

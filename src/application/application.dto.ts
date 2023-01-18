@@ -1,8 +1,9 @@
 /* eslint-disable prettier/prettier */
 import { IsEnum, IsNumber, IsOptional } from 'class-validator';
-import { AddRequestApp, GetRequestApp, RemoveRequestApp, RestoreRequestApp, SearchRequestApp, SoftDltRequestApp, stateEnum, UpdateRequestApp, UpdateResponseApp } from './proto/application.pb';
+import { AddRequestApp, GetRequestApp, RemoveRequestApp, RestoreRequestApp, SearchRequestApp, SoftDltRequestApp, UpdateRequestApp } from './proto/application.pb';
+import { stateEnum } from './state.enum';
 
-export class AddRequestDto implements AddRequestApp {
+export class AddRequestAppDto implements AddRequestApp {
   
   @IsNumber()
   public idOffer: number;
@@ -13,9 +14,6 @@ export class AddRequestDto implements AddRequestApp {
 export class GetRequestAppDto implements GetRequestApp {
   @IsNumber()
   public idApp: number;
-  
-  @IsNumber()
-  public idOffer: number;
 
   @IsNumber()
   public idUser: number;
@@ -45,15 +43,16 @@ export class RemoveRequestAppDto implements RemoveRequestApp {
 
 }
 
-export class UpdateRequestDto implements UpdateRequestApp {
+export class UpdateRequestAppDto implements UpdateRequestApp {
   @IsNumber()
   public idApp: number; 
 
   @IsNumber()
+  public idUser: number;
+
+  @IsNumber()
   @IsOptional()
   public idOffer: number;
-  @IsNumber()
-  public idUser: number;
   
   @IsEnum(stateEnum)
   @IsOptional()
@@ -75,3 +74,4 @@ export class RestoreRequestAppDto implements RestoreRequestApp {
   public idUser: number;
 
 }
+

@@ -6,8 +6,9 @@ import { Repository } from 'typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Application } from './application.entity';
 import { GetResponseOffer, OfferServiceClient, OFFER_SERVICE_NAME } from './proto/offer.pb';
-import { AddRequestApp, AddResponseApp, stateEnum, UpdateRequestApp, UpdateResponseApp,  RemoveRequestApp, RemoveResponseApp, GetRequestApp, GetResponseApp, SoftDltRequestApp, SoftDltResponseApp, RestoreDataApp, RestoreRequestApp, RestoreResponseApp, SearchRequestApp, SearchResponseApp } from './proto/application.pb';
-import { application } from 'express';
+import { AddRequestAppDto, GetRequestAppDto, RemoveRequestAppDto, RestoreRequestAppDto, SearchRequestAppDto, SoftDltRequestAppDto, UpdateRequestAppDto } from './application.dto';
+import { AddResponseApp, GetResponseApp, RemoveResponseApp, RestoreResponseApp, SearchResponseApp, SoftDltResponseApp, UpdateResponseApp } from './proto/application.pb';
+
 
 @Injectable()
 export class ApplicationService implements OnModuleInit {
@@ -25,27 +26,31 @@ export class ApplicationService implements OnModuleInit {
   }
     
 
-  public async addApplication(data: AddRequestApp): Promise<AddResponseApp> {
+  public async addApplication(data: AddRequestAppDto): Promise<AddResponseApp> {
     const offer: GetResponseOffer = await firstValueFrom(this.offerSvc.getOfferById({ idOffer: data.idOffer }));
 
+    console.log(offer);
     let application: Application = new Application();
 
-   // Application.price = product.data.price;
     application.idOffer = offer.data.idOffer;
     application.idUser = data.idUser;
-    application.state = stateEnum.PENDING;
 
     application = await this.repository.save(application);
     
     return { idApp: application.idApp, error: null, status: HttpStatus.OK };
   }
 
-  public async updateApplication(payload: UpdateRequestApp): Promise<UpdateResponseApp> {
+  public async updateApplication(payload: UpdateRequestAppDto): Promise<UpdateResponseApp> {
     const idApp = payload.idApp;
-    const idUser = payload.idUser
+    const idUser = payload.idUser;
+    const param ={
+      
+      "idOffer":payload.idOffer,
+      "state": payload.state
+    }
     const app = await this.repository.preload({
       idApp,
-      ...payload
+      ...param
     });
 
     if(! app) {
@@ -61,7 +66,7 @@ export class ApplicationService implements OnModuleInit {
 
 
 
-  public async removeApplication( {idApp, idUser}: RemoveRequestApp): Promise<RemoveResponseApp> {
+  public async removeApplication( {idApp, idUser}: RemoveRequestAppDto): Promise<RemoveResponseApp> {
     const app = await this.repository.findOne({ where: { idApp } });
     if(! app){
       return { idApp: null, error: ['Application not found'], status: HttpStatus.NOT_FOUND };
@@ -77,9 +82,10 @@ export class ApplicationService implements OnModuleInit {
     }
   }
 
-  public async getByIdApplication({ idApp, idUser }: GetRequestApp): Promise<GetResponseApp> {
+  public async getByIdApplication({ idApp, idUser }: GetRequestAppDto): Promise<GetResponseApp> {
     const app: Application = await this.repository.findOne({ where: { idApp } });
-    if (!application) {
+    console.log(app)
+    if (!app) {
       return { data: null, error: ['Application not found'], status: HttpStatus.NOT_FOUND };
     }
     if (app.idUser == idUser){
@@ -92,7 +98,7 @@ export class ApplicationService implements OnModuleInit {
 
   }
 
-  public async softDeleteApp({ idApp, idUser }: SoftDltRequestApp): Promise<SoftDltResponseApp> {
+  public async softDeleteApp({ idApp, idUser }: SoftDltRequestAppDto): Promise<SoftDltResponseApp> {
     const app: Application = await this.repository.findOne({ where: { idApp } });
 
     if (!app) {
@@ -106,74 +112,40 @@ export class ApplicationService implements OnModuleInit {
     this.repository.softDelete(idApp);
     return { idApp: idApp, error: null, status: HttpStatus.OK };
   }
-  public async restoreApp({ idApp, idUser }: RestoreRequestApp): Promise<RestoreResponseApp> {
-    const app = await this.repository.query("select * from applicationdb where idApp = ?", [idApp]);
-    if (!app) {
-      return { data: null, error: ['This application did not exist'], status: HttpStatus.NOT_FOUND };
-    }
-    if (app.idUser != idUser ){
-      return { data: null, error: ['This application did not exist'], status: HttpStatus.NOT_FOUND };
-
-    }
+  public async restoreApp({ idApp, idUser }: RestoreRequestAppDto): Promise<RestoreResponseApp> {
     
     await this.repository.restore(idApp);
-    const app2 = await this.repository.query("select * from applicationdb where idApp = ?", [idApp]);
+    const app2 = await this.repository.findOne({ where: { idApp } });
     return { data: app2, error: null, status: HttpStatus.OK };
   }
 
 
-  async searchAppByCriteria(findTodoDto?:SearchRequestApp): Promise<SearchResponseApp>{
-
-
-
-    if(findTodoDto.idUser){}
+  async searchAppByCriteria({idUser , idApp , idOffer , state}:SearchRequestAppDto): Promise<SearchResponseApp>{
+    const app2 = await this.repository.find({ where: { idApp , idUser, state,idOffer } });
+    return { data: app2, error: null, status: HttpStatus.OK };
+  }
+    /*if(findTodoDto.idUser){
     if (findTodoDto.idApp || findTodoDto.idOffer  || findTodoDto.state){
       const qb = this.repository.createQueryBuilder('application');
       if (findTodoDto.idApp) {
           qb.andWhere('application.idApp LIKE :idApp And application.idUser = :idUser', {idApp: findTodoDto.idApp, idUser: findTodoDto.idUser});
       }
       if (findTodoDto.idOffer) {
-          qb.andWhere('application.idOffer LIKE :idOffer And application.idUser = :idUser', {idOffer: `%${findTodoDto.idOffer}%` , idUser: findTodoDto.idUser});
+          qb.andWhere('application.idOffer LIKE :idOffer And application.idUser = :idUser', {idOffer: findTodoDto.idOffer , idUser: findTodoDto.idUser});
       }
       if (findTodoDto.state) {
-        qb.andWhere('application.state LIKE :state And application.idUser = :idUser ', {state: `%${findTodoDto.state}%`, idUser: findTodoDto.idUser});
+        qb.andWhere('application.state LIKE :state And application.idUser = :idUser ', {state: findTodoDto.state, idUser: findTodoDto.idUser});
     }
-    /*  qb.skip(skip);
-      qb.take(take);
-    */
+    
       const result=await qb.getMany();
       
       return { data: result, error: null , status: HttpStatus.OK  };
-
     }else{
     return { data: null, error: ['This application did not exist'], status: HttpStatus.NOT_FOUND };
-
   }
-
-    /*const take=findTodoDto.take || 2;
-    const page=findTodoDto.page || 1;
-    const skip=(page-1)*take;
-    let data:any;
-    if (findTodoDto.statut || findTodoDto.texte){
-        const qb=this.todoRepository.createQueryBuilder('todo');
-        if (findTodoDto.statut) {
-            qb.andWhere('todo.status LIKE :statut', {statut: findTodoDto.statut});
-        }
-        if (findTodoDto.texte) {
-            qb.andWhere('todo.name LIKE :texte OR todo.description LIKE :texte', {texte: `%${findTodoDto.texte}%`});
-        }
-        qb.skip(skip);
-        qb.take(take);
-        const [result,total]=await qb.getManyAndCount();
-        data = [result,total];
-    } 
-    else {
-        data = await this.todoRepository.findAndCount({order:{createdAt:'DESC'}, take:take, skip:skip});
-    }
-    return this.pagination(data,page,take);*/ 
 }
-
-
-
-
-}
+  else{
+    return { data: null, error: ['This application did not exist'], status: HttpStatus.NOT_FOUND };
+  }
+*/
+  }
