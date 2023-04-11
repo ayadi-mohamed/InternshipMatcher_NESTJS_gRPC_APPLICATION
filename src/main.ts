@@ -7,7 +7,8 @@ import { AppModule } from './app.module';
 import { protobufPackage } from './application/proto/application.pb';
 
 async function bootstrap() {
-  const app: INestMicroservice = await NestFactory.createMicroservice(AppModule, {
+  const app = await NestFactory.create(AppModule);
+  const microservice: INestMicroservice = app.connectMicroservice({
     transport: Transport.GRPC,
     options: {
       url: '0.0.0.0:50052',
@@ -18,7 +19,8 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  await app.listen();
+  await app.startAllMicroservices();
+  await app.listen(3001);
 }
 
 bootstrap();

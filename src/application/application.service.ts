@@ -1,38 +1,22 @@
 /* eslint-disable prettier/prettier */
-import { HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ClientGrpc } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
-import { firstValueFrom } from 'rxjs';
 import { Application } from './application.entity';
-import { GetResponseOffer, OfferServiceClient, OFFER_SERVICE_NAME } from './proto/offer.pb';
 import { AddRequestAppDto, GetRequestAppDto, RemoveRequestAppDto, RestoreRequestAppDto, SearchRequestAppDto, SoftDltRequestAppDto, UpdateRequestAppDto } from './application.dto';
 import { AddResponseApp, GetResponseApp, RemoveResponseApp, RestoreResponseApp, SearchResponseApp, SoftDltResponseApp, UpdateResponseApp } from './proto/application.pb';
 
 
 @Injectable()
-export class ApplicationService implements OnModuleInit {
+export class ApplicationService {
   
-  private offerSvc: OfferServiceClient;
-
-  @Inject(OFFER_SERVICE_NAME)
-  private readonly client: ClientGrpc;
-
   @InjectRepository(Application)
-  private readonly repository: Repository<Application>;
-
-  public onModuleInit(): void {
-    this.offerSvc = this.client.getService<OfferServiceClient>(OFFER_SERVICE_NAME);
-  }
-    
+  private readonly repository: Repository<Application>; 
 
   public async addApplication(data: AddRequestAppDto): Promise<AddResponseApp> {
-    const offer: GetResponseOffer = await firstValueFrom(this.offerSvc.getOfferById({ idOffer: data.idOffer }));
-
-    console.log(offer);
     let application: Application = new Application();
 
-    application.idOffer = offer.data.idOffer;
+    application.idOffer = data.idOffer;
     application.idUser = data.idUser;
 
     application = await this.repository.save(application);
