@@ -20,7 +20,7 @@ import { HttpModule } from '@nestjs/axios';
       username: 'postgres',
       password: process.env.PASSDB,
       entities: ['dist/**/*.entity.{ts,js}'],
-      synchronize: false, // never true in production!
+      synchronize: true, // never true in production!
     }),
     ApplicationModule,ConfigModule.forRoot(), HealthModule, PrometheusModule, MetricsModule, HttpModule
   ],
